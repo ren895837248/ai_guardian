@@ -1,0 +1,113 @@
+人脸识别+头部动作检测系统 - 使用说明
+==========================================
+
+一、系统说明
+-----------
+本系统连接局域网内的ONVIF摄像头，进行人脸识别和头部动作检测：
+1. 识别到已注册的人脸并持续超过设置时间后
+2. 自动进入头部动作检测模式
+3. 检测点头或摇头动作，返回True或False
+4. 系统已优化性能，降低了系统负载
+5. 所有结果只在日志中输出，不显示画面
+
+二、准备工作
+-----------
+1. 安装依赖包：
+   pip install -r requirements.txt
+
+2. 下载dlib面部关键点模型：
+   wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+   bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
+
+3. 准备已注册人脸图片：
+   - 将所有已注册人员的人脸照片放入 person 文件夹
+   - 图片必须是 jpg 或 jpeg 格式
+   - 文件名即为人员姓名（例如：张三.jpg）
+   - 每张图片只能包含一个人脸
+   - 建议图片清晰、正面、光线充足
+
+三、运行系统
+-----------
+python main.py --rtsp rtsp://用户名:密码@摄像头IP:554/stream1
+
+可选参数：
+--duration 3.0         设置需要持续识别的时间（秒），默认3秒
+--frame-skip 2         设置跳帧数，默认2（数值越大系统负载越低，但响应越慢）
+
+示例：
+python main.py --rtsp rtsp://admin:admin123@192.168.1.100:554/stream1 --duration 5.0 --frame-skip 3
+
+四、系统运行流程
+---------------
+1. 系统启动后，从person文件夹加载所有jpg图片
+2. 持续进行人脸识别
+3. 当识别到已注册的人脸且持续时间超过设置值时，进入头部动作检测模式
+4. 用户进行点头或摇头动作
+5. 检测到动作后，在日志中输出True
+6. 自动返回人脸识别模式
+
+五、日志说明
+-----------
+- "识别到: 张三" - 检测到已注册人脸
+- "已识别到 张三 超过 3.0 秒，进入动作检测模式" - 开始检测动作
+- "张三 点头动作检测成功！返回True" - 点头检测成功
+- "张三 摇头动作检测成功！返回True" - 摇头检测成功
+- "返回人脸识别模式" - 返回到人脸识别状态
+
+六、RTSP地址格式参考
+-------------------
+常见格式：rtsp://username:password@ip:port/path
+
+不同品牌示例：
+- 海康威视：rtsp://admin:admin123@192.168.1.100:554/Streaming/Channels/101
+- 大华：rtsp://admin:admin123@192.168.1.100:554/cam/realmonitor?channel=1&subtype=0
+- 通用：rtsp://admin:admin123@192.168.1.100:554/stream1
+
+七、性能优化建议
+---------------
+1. 调整跳帧数：增加--frame-skip参数可显著降低CPU使用率
+2. 修改图像缩放因子：在face_recognition_module.py中调整scale_factor（默认0.5）
+3. 调整识别阈值：在face_recognition_module.py中调整recognition_threshold（默认0.6）
+
+八、故障排除
+-----------
+1. 无法连接摄像头
+   - 检查RTSP地址是否正确
+   - 确认摄像头在同一局域网
+   - 测试用户名密码是否正确
+
+2. 未加载到人脸数据
+   - 确认person文件夹存在
+   - 确认文件夹中有jpg图片
+   - 检查图片中是否包含清晰的人脸
+
+3. dlib模型未找到
+   - 确保下载了shape_predictor_68_face_landmarks.dat文件
+   - 检查文件是否在当前目录
+
+4. 人脸识别不准确
+   - 增加person文件夹中的人脸图片数量
+   - 确保图片质量高、光线充足
+   - 调整recognition_threshold参数
+
+5. 头部动作检测不灵敏
+   - 增加动作幅度
+   - 确保人脸正对摄像头
+   - 调整head_gesture_detector.py中的阈值参数
+
+九、文件结构
+-----------
+.
+├── main.py                                      # 主程序
+├── onvif_camera.py                             # 摄像头连接模块
+├── face_recognition_module.py                   # 人脸识别模块
+├── head_gesture_detector.py                     # 头部动作检测模块
+├── requirements.txt                             # 依赖包列表
+├── shape_predictor_68_face_landmarks.dat       # dlib模型（需下载）
+├── person/                                      # 已注册人脸图片文件夹
+│   ├── 张三.jpg
+│   ├── 李四.jpg
+│   └── ...
+└── 使用说明.txt                                  # 本文件
+
+十、按Ctrl+C退出程序
